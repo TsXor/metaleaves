@@ -253,7 +253,7 @@ private:
 public:
     using methods_list = utils::type_list<Methods...>;
 
-    explicit constexpr methods_table(const Methods::export_type&... meths):
+    explicit constexpr methods_table(const typename Methods::export_type&... meths):
         _::method_item<Methods>(meths)... {}
     template <typename T>
     explicit constexpr methods_table(utils::type_token<T> t):
