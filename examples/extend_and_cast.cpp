@@ -6,6 +6,7 @@ using metaleaves::metaclass;
 using metaleaves::method;
 using metaleaves::extends;
 using metaleaves::meta_cast;
+using metaleaves::reify_cast;
 
 METALEAVES_DEFINE_SYMBOL(info)
 using IAnimal = metaclass<
@@ -44,4 +45,9 @@ int main() {
     animal1[info]();
     auto animal2 = meta_cast<IAnimal>(icat);
     animal2[info]();
+
+    std::cout << reify_cast<Dog>(animal1) << '\n';
+    std::cout << reify_cast<Dog>(animal2) << '\n';
+    std::cout << reify_cast<Cat>(animal1) << '\n';
+    std::cout << reify_cast<Cat>(animal2) << '\n';
 }

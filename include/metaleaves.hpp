@@ -2,6 +2,7 @@
 #ifndef __METALEAVES_HPP__
 #define __METALEAVES_HPP__
 
+#include <cstring>
 #include <concepts>
 #include <type_traits>
 #include <utility>
@@ -325,6 +326,40 @@ struct is_metaclass<metaclass<Methods...>> : std::true_type {};
 template <typename T>
 inline constexpr bool is_metaclass_v = is_metaclass<T>::value;
 
+/**
+ * @brief Cast a metaclass to a "subset".
+ * 
+ * When cast is not possible, it will cause a compile-time error.
+ * 
+ * Note that this is structural, a class can be casted to another when they have no
+ * relationship with each other.
+ */
+template <typename To, typename From>
+    requires (is_metaclass_v<From> && is_metaclass_v<To>)
+To meta_cast(const From& source) {
+    return To(source.self, source.methods.subset(To::methods_list::value()));
+}
+
+/**
+ * @brief Cast a metaclass to pointer of a specified type, returns `nullptr`
+ * when the metaclass is not created from that type.
+ * 
+ * When it is known that the metaclass cannot be created from target type, a
+ * compile-time error will be raised.
+ * 
+ * Note that cast is successful only when the referenced object has exactly
+ * the same type as target type. Cast will fail when target type is base type
+ * of the real type of the referenced object, whether `virtual` or not.
+ */
+template <typename To, typename From> requires (is_metaclass_v<From>)
+To* reify_cast(const From& source) {
+    static_assert(From::template capable<To>, "impossible cast");
+    using MethodsTable = decltype(source.methods);
+    auto should_be = MethodsTable(utils::type_token_value<To>);
+    bool okay = std::memcmp(&source.methods, &should_be, sizeof(MethodsTable)) == 0;
+    return okay ? reinterpret_cast<To*>(source.self) : nullptr;
+}
+
 namespace _ {
 
 template <typename... ExtMethods>
@@ -380,20 +415,6 @@ public:
     template <typename... Methods>
     using with = typename _::extend_methods<Methods...>::template on<_SumBase>;
 };
-
-/**
- * @brief Cast a metaclass to a "subset".
- * 
- * When cast is not possible, it will cause a compile-time error.
- * 
- * Note that this is structural, a class can be casted to another when they have no
- * relationship with each other.
- */
-template <typename To, typename From>
-    requires (is_metaclass_v<From> && is_metaclass_v<To>)
-To meta_cast(const From& source) {
-    return To(source.self, source.methods.subset(To::methods_list::value()));
-}
 
 } // namespace metaleaves
 
